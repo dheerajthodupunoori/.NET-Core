@@ -23,7 +23,7 @@ namespace SwaggerDemo.Controllers
         }
 
 
-        //[AllowAnonymous]
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult> Authenticate(string userName , string PassWord)
         {

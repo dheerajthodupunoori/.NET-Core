@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.Filters;
 
 namespace SwaggerDemo
 {
@@ -22,11 +23,18 @@ namespace SwaggerDemo
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddAuthentication("BasicAuthentication")
-                .AddScheme<AuthenticationSchemeOptions , Auth.BasicAuthenticationHandler>("BasicAuthentication",null);
+                .AddScheme<AuthenticationSchemeOptions, Auth.BasicAuthenticationHandler>("BasicAuthentication", null);
             services.AddScoped<Interface.IUser, Services.UserService>();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "Swagger Demo", Version = "v1" });
+
+                c.AddSecurityDefinition("Basic Authentication", new BasicAuthScheme()
+                {
+                    Description = "Basic Authentication to user this Service.",
+                    Type = "basic"
+                });
+                c.OperationFilter<SecurityRequirementsOperationFilter>();
             });
         }
 
@@ -41,6 +49,7 @@ namespace SwaggerDemo
             {
                 app.UseHsts();
             }
+            app.UseAuthentication();
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
