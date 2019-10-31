@@ -6,6 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.Filters;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Collections.Generic;
+using SwaggerDemo.Filters;
 
 namespace SwaggerDemo
 {
@@ -25,17 +28,30 @@ namespace SwaggerDemo
             services.AddAuthentication("BasicAuthentication")
                 .AddScheme<AuthenticationSchemeOptions, Auth.BasicAuthenticationHandler>("BasicAuthentication", null);
             services.AddScoped<Interface.IUser, Services.UserService>();
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder =>
+                 {
+                     builder.AllowCredentials()
+                     .AllowAnyHeader().
+                     AllowAnyMethod().
+                     AllowAnyOrigin();
+ 
+                 });
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "Swagger Demo", Version = "v1" });
 
-                c.AddSecurityDefinition("Basic Authentication", new BasicAuthScheme()
+                c.AddSecurityDefinition("Basic", new BasicAuthScheme()
                 {
                     Description = "Basic Authentication to user this Service.",
                     Type = "basic"
                 });
-                c.OperationFilter<SecurityRequirementsOperationFilter>();
+                c.DocumentFilter<SwaggerSecurityRequirementsDocumentFilter>();
+                c.OperationFilter<HeadersFilter>();
             });
+           
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -50,6 +66,7 @@ namespace SwaggerDemo
                 app.UseHsts();
             }
             app.UseAuthentication();
+            app.UseCors("CorsPolicy");
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -60,4 +77,21 @@ namespace SwaggerDemo
             app.UseMvc();
         }
     }
+
+
+    public class SwaggerSecurityRequirementsDocumentFilter : IDocumentFilter
+    {
+        public void Apply(SwaggerDocument swaggerDoc, DocumentFilterContext context)
+        {
+            swaggerDoc.Security = new List<IDictionary<string, IEnumerable<string>>>
+                {
+                new Dictionary<string, IEnumerable<string>>
+                {
+                    { "Basic", new string[]{ } }
+                }
+            };
+        }
+
+    }
+
 }

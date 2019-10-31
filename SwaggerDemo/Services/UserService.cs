@@ -38,7 +38,6 @@ namespace SwaggerDemo.Services
             {
                 return null;
             }
-            user.Password = string.Empty;
             return user;
         }
     }
