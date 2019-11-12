@@ -1,5 +1,6 @@
 ﻿using EFCore.Interface;
 using EFCore.Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,24 +11,28 @@ namespace EFCore.Operations
     public class ProductService : IProductService
     {
         private readonly ProductContext _productContext;
+        private readonly ProductSqlServerContext _productSqlServerContext;
         public ProductService()
         {
             _productContext = new ProductContext();
+            _productSqlServerContext = new ProductSqlServerContext();
         }
 
         public void InsertProduct()
         {
             Product product = new Product()
             {
-
                 Name = "SQL"
             };
 
-
             try
             {
+                _productSqlServerContext.Database.ExecuteSqlCommand("SET IDENTITY_INSERT [EFCore].[dbo].[Products] ON");
+                _productSqlServerContext.SaveChanges();
                 _productContext.Add(product);
+                _productSqlServerContext.Add(product);
                 _productContext.SaveChanges();
+                _productSqlServerContext.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -72,6 +77,16 @@ namespace EFCore.Operations
             _productContext.SaveChanges();
             Console.WriteLine("Remaining products after deleting", product.Name);
             GetProducts();
+        }
+
+        public void TruncateProductsTable()
+        {
+            Console.WriteLine("Truncating products table");
+            foreach(var product in _productContext.products)
+            {
+                _productContext.products.Remove(product);
+            }
+            Console.WriteLine("Truncating products table completed");
         }
     }
 }
